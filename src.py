@@ -9,11 +9,11 @@ from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import to_openai_tool
 from llama_index.core.tools import FunctionTool
 
-llm = Groq(model="llama3-70b-8192", api_key="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")
+llm = Groq(model="llama3-70b-8192", api_key="")
 
 messages = [
     ChatMessage(
-        role="system", content='You are a helpful Family Office Assistant that answers queries about family offices using internet search and give accurate info for provided question. Today is {today}'.format(today = date.today())
+        role="system", content='You are a virtual assistant who finds internet for latest info required to fulfill the questions asked. Today is {today}'.format(today = date.today())
         ),
     ChatMessage(role="user", content="What is your name"),
 ]
@@ -77,7 +77,7 @@ agent_worker = FunctionCallingAgentWorker.from_tools(
 )
 agent = agent_worker.as_agent()
 
-response = agent.chat("What does the latest Family Office Report by JP Morgan say?")
+response = agent.chat("What it the closing stock price of NVIDIA?")
 
 print(response)
 
