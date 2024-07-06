@@ -8,19 +8,25 @@ from llama_index.core.agent import FunctionCallingAgentWorker
 from llama_index.llms.openai import OpenAI
 from llama_index.llms.openai.utils import to_openai_tool
 from llama_index.core.tools import FunctionTool
+from dotenv import load_dotenv
+import yfinance as yf
+import os
 
-llm = Groq(model="llama3-70b-8192", api_key="")
+load_dotenv()
+
+llm = Groq(model="llama3-70b-8192", api_key= os.getenv('GROQ_API_KEY'))
 
 messages = [
     ChatMessage(
-        role="system", content='You are a virtual assistant who finds internet for latest info required to fulfill the questions asked. Today is {today}'.format(today = date.today())
+        role="system", content='You are a helpful Family Office Assistant that answers queries about family offices using internet search and give accurate info for provided question. Today is {today}'.format(today = date.today())
         ),
     ChatMessage(role="user", content="What is your name"),
 ]
 
+
 def search_internet(query):
     '''
-    Fetches top 5 search engine results for any 'query'
+    Fetches top 5 search engine results for any 'query'. If any real-time information have to be found just form a query from the user's message.
         Args:
             query (str): string to find something on the internet
         Returns:  
@@ -65,20 +71,34 @@ def request_url(url):
         print(f"Request failed: {e}")
         return None
     
+def get_stock_info(symbol, key):
+    '''Return the correct stock info value given the appropriate symbol and key. Infer valid key from the user prompt; it must be one of the following:
+industryDisp, sectorKey, longBusinessSummary, fullTimeEmployees, companyOfficers, boardRisk, compensationRisk, priceHint, previousClose, open, dayLow, dayHigh, regularMarketDayLow, regularMarketDayHigh, 
+If asked generically for 'stock price', use currentPrice
+    '''
+    data = yf.Ticker(symbol)
+    stock_info = data.info
+    return stock_info[key]
 
 search_internet = FunctionTool.from_defaults(search_internet)
 request_url = FunctionTool.from_defaults(request_url)
+get_stock_info = FunctionTool.from_defaults(get_stock_info)
 
 agent_worker = FunctionCallingAgentWorker.from_tools(
-    [search_internet,request_url],
+    [search_internet,request_url, get_stock_info],
     llm=llm,
     verbose=True,
-    allow_parallel_tool_calls=False,
+    allow_parallel_tool_calls=True,
 )
 agent = agent_worker.as_agent()
 
-response = agent.chat("What it the closing stock price of NVIDIA?")
+# response = agent.chat("What is the last closing price of the Apple stock?")
 
-print(response)
+while True:
+    user_msg = input("You:")
+    response = agent.chat(user_msg)
+    if response:
+        print(response)
+
 
 # What does the latest Family Office Report by JP Morgan say?
