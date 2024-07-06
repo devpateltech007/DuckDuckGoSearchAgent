@@ -1,0 +1,12 @@
+[Unit]
+Description=Flask Application Service
+After=network.target
+
+[Service]
+User=your_username  # Replace with your system username
+Group=www-data  # Or the group running your web server
+WorkingDirectory=./app.py  # Replace with your app directory
+ExecStart=/path/to/your/venv/bin/gunicorn --config gunicorn_config.py app:app
+
+[Install]
+WantedBy=multi-user.target

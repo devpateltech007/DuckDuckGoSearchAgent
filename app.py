@@ -11,14 +11,23 @@ from llama_index.core.tools import FunctionTool
 from dotenv import load_dotenv
 import yfinance as yf
 import os
+from flask import  Flask, request, jsonify
+
+#Server setup
+app = Flask(__name__)
+
+
 
 load_dotenv()
-
+#llama3-70b-8192
+# mixtral-8x7b-32768
 llm = Groq(model="llama3-70b-8192", api_key= os.getenv('GROQ_API_KEY'))
 
 messages = [
     ChatMessage(
-        role="system", content='You are a helpful Family Office Assistant that answers queries about family offices using internet search and give accurate info for provided question. Today is {today}'.format(today = date.today())
+        role="system", content='''You are Shiela, a helpful Family Office Assistant that answers queries ONLY about and related to family offices using internet search and give accurate info for provided question in given timeline. Today is {today}
+        When greeted you must reply politely with message introducing you and ask how can you help
+        Do not go off topic, just answer questions about Family Offices and say no when asked otherwise'''.format(today = date.today())
         ),
     ChatMessage(role="user", content="What is your name"),
 ]
@@ -26,7 +35,7 @@ messages = [
 
 def search_internet(query):
     '''
-    Fetches top 5 search engine results for any 'query'. If any real-time information have to be found just form a query from the user's message.
+    Fetches top 5 search engine results for any 'query'. If any real-time information have to be found, or you don't know answer to a question just form a query from the user's message.
         Args:
             query (str): string to find something on the internet
         Returns:  
@@ -89,16 +98,32 @@ agent_worker = FunctionCallingAgentWorker.from_tools(
     llm=llm,
     verbose=True,
     allow_parallel_tool_calls=True,
+    prefix_messages=[ChatMessage(
+        role="system", content='''You are Shiela, a helpful Family Office Assistant that answers queries ONLY about and related to family offices using internet search and give accurate info for provided question in given timeline. Today is {today}
+        When greeted you must reply politely with message introducing you and ask how can you help
+        Do not go off topic, just answer questions about Family Offices and say no when asked otherwise'''.format(today = date.today())
+        )]
 )
 agent = agent_worker.as_agent()
 
 # response = agent.chat("What is the last closing price of the Apple stock?")
 
-while True:
-    user_msg = input("You:")
-    response = agent.chat(user_msg)
-    if response:
-        print(response)
+# while True:
+#     user_msg = input("You:")
+#     response = agent.chat(user_msg)
+#     if response:
+#         print(response)
 
 
 # What does the latest Family Office Report by JP Morgan say?
+
+@app.route('/',methods=['POST'])
+def chat():
+    # Access query parameters from request.args
+    query = request.get_json()["query"]
+    response = agent.chat(query)
+    return str(response)
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
