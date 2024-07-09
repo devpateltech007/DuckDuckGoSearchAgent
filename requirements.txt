@@ -1,6 +1,7 @@
 beautifulsoup4==4.12.3
 duckduckgo_search==6.1.7
-llama_index==0.10.52
+Flask==3.0.3
+llama_index==0.10.53
 python-dotenv==1.0.1
 Requests==2.32.3
 yfinance==0.2.40
